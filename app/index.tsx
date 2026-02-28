@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { 
   useSharedValue, 
@@ -12,56 +12,78 @@ import Animated, {
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
+// 🔒 THEME FALLBACK: Cor hexadecimal pura para o motor nativo
+const HZ_BRAND_COLOR = '#B6192E'; 
+
 export default function IntroScreen() {
   const router = useRouter();
   
-  // Valores da Animação
+  // Controles de Animação
   const lineWidth = useSharedValue(0);
   const lineOpacity = useSharedValue(1);
   const logoOpacity = useSharedValue(0);
-  const logoBlur = useSharedValue(15);
+  const logoBlur = useSharedValue(10);
   const textOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // 1. A linha do Horizonte nasce do centro (0 a 250px)
-    lineWidth.value = withTiming(250, { duration: 1500, easing: Easing.out(Easing.cubic) });
-    
-    // 2. A linha se dissipa enquanto a Logo aparece
-    lineOpacity.value = withDelay(1200, withTiming(0, { duration: 800 }));
-    logoOpacity.value = withDelay(1400, withTiming(1, { duration: 1500 }));
-    logoBlur.value = withDelay(1400, withTiming(0, { duration: 1500 }));
-    
-    // 3. O subtítulo surge suavemente
-    textOpacity.value = withDelay(2200, withTiming(1, { duration: 1000 }));
+    let isMounted = true; // Previne vazamento de memória se a tela for fechada antes
 
-    // 4. Vai para a tela principal
-    setTimeout(() => {
-      router.replace('/welcome');
-    }, 4500);
-  }, []);
+    // 1. A linha do horizonte rasga a tela no centro
+    lineWidth.value = withTiming(300, { duration: 1600, easing: Easing.out(Easing.exp) });
+    
+    // 2. A linha some, a logo e o blur se resolvem
+    lineOpacity.value = withDelay(1400, withTiming(0, { duration: 800 }));
+    logoOpacity.value = withDelay(1600, withTiming(1, { duration: 1500 }));
+    logoBlur.value = withDelay(1600, withTiming(0, { duration: 1500 }));
+    
+    // 3. Subtítulo Apple-style aparece
+    textOpacity.value = withDelay(2400, withTiming(1, { duration: 1200 }));
+
+    // 4. Transição sutil para a Welcome
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        router.replace('/welcome');
+      }
+    }, 4800);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [router]);
 
   const animatedProps = useAnimatedProps(() => ({ blurRadius: logoBlur.value }));
   
   return (
     <View className="flex-1 bg-surface-base justify-center items-center">
-      {/* O Horizonte (Linha de luz) */}
+      
+      {/* A Linha de Luz (Horizonte) */}
       <Animated.View style={[
         styles.horizonLine,
-        useAnimatedStyle(() => ({ width: lineWidth.value, opacity: lineOpacity.value }))
+        useAnimatedStyle(() => ({ 
+          width: lineWidth.value, 
+          opacity: lineOpacity.value 
+        }))
       ]} />
 
-      {/* A Logo */}
+      {/* A Logo com Blur nativo */}
       <AnimatedImage 
         source={require('../assets/images/logo/life.png')}
-        style={[styles.logo, useAnimatedStyle(() => ({ opacity: logoOpacity.value }))]}
+        style={[
+          styles.logo, 
+          useAnimatedStyle(() => ({ opacity: logoOpacity.value }))
+        ]}
         animatedProps={animatedProps}
       />
 
-      {/* O Subtítulo */}
-      <Animated.Text style={[
-        styles.subtitle, 
-        useAnimatedStyle(() => ({ opacity: textOpacity.value }))
-      ]}>
+      {/* Subtítulo Premium */}
+      <Animated.Text 
+        className="absolute bottom-32 font-inter text-content-secondary uppercase text-xs font-medium"
+        style={[
+          useAnimatedStyle(() => ({ opacity: textOpacity.value })),
+          { letterSpacing: 3 } // 🔒 FIX: Usando número inteiro para RCTText, nada de 'em' ou 'px'
+        ]}
+      >
         Conecte. Expanda. Viva.
       </Animated.Text>
     </View>
@@ -70,29 +92,19 @@ export default function IntroScreen() {
 
 const styles = StyleSheet.create({
   horizonLine: {
-    height: 1,
-    backgroundColor: '#B6192E', // O vermelho "Horazion" atuando como a luz do horizonte
+    height: 1.5,
+    backgroundColor: HZ_BRAND_COLOR,
     position: 'absolute',
-    shadowColor: '#B6192E',
+    shadowColor: HZ_BRAND_COLOR,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 10,
   },
   logo: {
-    width: 200,
-    height: 60,
+    width: 220,
+    height: 70,
     resizeMode: 'contain',
     position: 'absolute',
-  },
-  subtitle: {
-    position: 'absolute',
-    bottom: 120,
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: 'var(--hz-content-second)', // Usando sua variável do NativeWind
-    letterSpacing: 2,
-    fontWeight: '500',
-    textTransform: 'uppercase',
   }
 });
