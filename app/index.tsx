@@ -1,83 +1,98 @@
-import { View, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withTiming, 
-  useAnimatedProps,
-  Easing
+  withDelay,
+  Easing,
+  useAnimatedProps
 } from 'react-native-reanimated';
-import { HorazionGalaxy } from '../src/components/ui/HorazionGalaxy';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 export default function IntroScreen() {
   const router = useRouter();
   
-  // Começa invisível, minúscula (escala 0.01 = ponto) e bem borrada
+  // Valores da Animação
+  const lineWidth = useSharedValue(0);
+  const lineOpacity = useSharedValue(1);
   const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.01); 
-  const logoRotation = useSharedValue(180); // Começa girada 180 graus
   const logoBlur = useSharedValue(15);
+  const textOpacity = useSharedValue(0);
 
-  const handleAnimationFinish = () => {
-    // A galáxia avisa que vai sumir. É a hora do show da logo!
+  useEffect(() => {
+    // 1. A linha do Horizonte nasce do centro (0 a 250px)
+    lineWidth.value = withTiming(250, { duration: 1500, easing: Easing.out(Easing.cubic) });
     
-    // Revela a imagem rapidamente
-    logoOpacity.value = withTiming(1, { duration: 1000 });
-    // Tira o desfoque aos poucos
-    logoBlur.value = withTiming(0, { duration: 1500 });
+    // 2. A linha se dissipa enquanto a Logo aparece
+    lineOpacity.value = withDelay(1200, withTiming(0, { duration: 800 }));
+    logoOpacity.value = withDelay(1400, withTiming(1, { duration: 1500 }));
+    logoBlur.value = withDelay(1400, withTiming(0, { duration: 1500 }));
     
-    // EFEITO ESTRELA: Cresce da escala 0.01 até 1 (tamanho real) com uma curva exponencial bonita
-    logoScale.value = withTiming(1, { 
-      duration: 1800, 
-      easing: Easing.out(Easing.exp) 
-    });
-    
-    // EFEITO ESTRELA: Desfaz o giro enquanto cresce
-    logoRotation.value = withTiming(0, { 
-      duration: 1800, 
-      easing: Easing.out(Easing.exp) 
-    });
+    // 3. O subtítulo surge suavemente
+    textOpacity.value = withDelay(2200, withTiming(1, { duration: 1000 }));
 
-    // Aguarda a logo ficar majestosa por 1.5s antes de ir para a tela de Welcome
+    // 4. Vai para a tela principal
     setTimeout(() => {
       router.replace('/welcome');
-    }, 3500);
-  };
+    }, 4500);
+  }, []);
 
-  const animatedProps = useAnimatedProps(() => {
-    return {
-      blurRadius: logoBlur.value,
-    };
-  });
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: logoOpacity.value,
-      transform: [
-        { scale: logoScale.value },
-        // Concatena a rotação com "deg" (graus)
-        { rotate: `${logoRotation.value}deg` } 
-      ]
-    };
-  });
-
+  const animatedProps = useAnimatedProps(() => ({ blurRadius: logoBlur.value }));
+  
   return (
-    <View className="flex-1 bg-white justify-center items-center">
-      
-      <HorazionGalaxy onAnimationEnd={handleAnimationFinish} />
+    <View className="flex-1 bg-surface-base justify-center items-center">
+      {/* O Horizonte (Linha de luz) */}
+      <Animated.View style={[
+        styles.horizonLine,
+        useAnimatedStyle(() => ({ width: lineWidth.value, opacity: lineOpacity.value }))
+      ]} />
 
-      {/* A logo fica com 'position: absolute' para garantir que cresça exatamente no centro por cima do Canvas */}
+      {/* A Logo */}
       <AnimatedImage 
         source={require('../assets/images/logo/life.png')}
-        style={[
-          { width: 250, height: 250, resizeMode: 'contain', position: 'absolute' }, 
-          animatedStyle
-        ]}
+        style={[styles.logo, useAnimatedStyle(() => ({ opacity: logoOpacity.value }))]}
         animatedProps={animatedProps}
       />
-      
+
+      {/* O Subtítulo */}
+      <Animated.Text style={[
+        styles.subtitle, 
+        useAnimatedStyle(() => ({ opacity: textOpacity.value }))
+      ]}>
+        Conecte. Expanda. Viva.
+      </Animated.Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  horizonLine: {
+    height: 1,
+    backgroundColor: '#B6192E', // O vermelho "Horazion" atuando como a luz do horizonte
+    position: 'absolute',
+    shadowColor: '#B6192E',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  logo: {
+    width: 200,
+    height: 60,
+    resizeMode: 'contain',
+    position: 'absolute',
+  },
+  subtitle: {
+    position: 'absolute',
+    bottom: 120,
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: 'var(--hz-content-second)', // Usando sua variável do NativeWind
+    letterSpacing: 2,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  }
+});
