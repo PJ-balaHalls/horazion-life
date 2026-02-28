@@ -1,0 +1,44 @@
+/* src/styles/global.css */
+
+/* 1. Base Neutra e Variáveis Fundamentais */
+:root {
+  --hz-red-main: 182, 25, 46; /* #B6192E */
+  --hz-black-main: 0, 0, 0;
+  --hz-white-main: 255, 255, 255;
+
+  /* FORÇAR APARÊNCIA LIGHT NA BASE (Conforme solicitado) */
+  --hz-surface-base: rgb(255, 255, 255);
+  --hz-surface-elev: rgb(248, 248, 248);
+  --hz-surface-sunken: rgb(242, 242, 242);
+
+  --hz-content-primary: rgb(0, 0, 0);
+  --hz-content-second: rgb(84, 84, 84);
+  --hz-content-action: rgb(182, 25, 46);
+
+  --hz-status-success: #10b981;
+  --hz-status-warning: #f59e0b;
+  --hz-status-danger: rgb(182, 25, 46);
+}
+
+/* Remover overrides de dark mode que possam afetar a tela de login indesejadamente */
+/* Mantemos apenas transformações funcionais (Daltonismo/Dislexia) */
+
+[data-vision="protanopia"] {
+  --hz-content-action: #2155ff;
+  --hz-status-danger: #2155ff;
+}
+
+[data-dyslexia="true"] {
+  font-family: "OpenDyslexic", sans-serif !important;
+}
+
+/* CORREÇÃO CRÍTICA: Unidades convertidas para PX (React Native não aceita rem) */
+.text-scale-80 {
+  font-size: 13px; /* era 0.8rem */
+}
+.text-scale-120 {
+  font-size: 19px; /* era 1.2rem */
+}
+.text-scale-160 {
+  font-size: 26px; /* era 1.6rem */
+}
