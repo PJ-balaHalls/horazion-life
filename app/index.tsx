@@ -9,102 +9,78 @@ import Animated, {
   Easing,
   useAnimatedProps
 } from 'react-native-reanimated';
+import { HorazionGalaxy } from '../src/components/ui/HorazionGalaxy';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
-
-// 🔒 THEME FALLBACK: Cor hexadecimal pura para o motor nativo
-const HZ_BRAND_COLOR = '#B6192E'; 
 
 export default function IntroScreen() {
   const router = useRouter();
   
-  // Controles de Animação
-  const lineWidth = useSharedValue(0);
-  const lineOpacity = useSharedValue(1);
   const logoOpacity = useSharedValue(0);
-  const logoBlur = useSharedValue(10);
-  const textOpacity = useSharedValue(0);
+  const logoScale = useSharedValue(0.7); 
+  const logoTranslateY = useSharedValue(40);
+  const logoBlur = useSharedValue(25);
 
-  useEffect(() => {
-    let isMounted = true; // Previne vazamento de memória se a tela for fechada antes
+  const word1Opacity = useSharedValue(0);
+  const word2Opacity = useSharedValue(0);
+  const word3Opacity = useSharedValue(0);
 
-    // 1. A linha do horizonte rasga a tela no centro
-    lineWidth.value = withTiming(300, { duration: 1600, easing: Easing.out(Easing.exp) });
+  const handleAnimationFinish = () => {
+    // 1. Logo emerge majestosamente do Horizonte
+    logoOpacity.value = withTiming(1, { duration: 1800, easing: Easing.out(Easing.cubic) });
+    logoScale.value = withTiming(1, { duration: 1800, easing: Easing.out(Easing.cubic) });
+    logoTranslateY.value = withTiming(0, { duration: 1800, easing: Easing.out(Easing.cubic) });
+    logoBlur.value = withTiming(0, { duration: 1500 });
     
-    // 2. A linha some, a logo e o blur se resolvem
-    lineOpacity.value = withDelay(1400, withTiming(0, { duration: 800 }));
-    logoOpacity.value = withDelay(1600, withTiming(1, { duration: 1500 }));
-    logoBlur.value = withDelay(1600, withTiming(0, { duration: 1500 }));
-    
-    // 3. Subtítulo Apple-style aparece
-    textOpacity.value = withDelay(2400, withTiming(1, { duration: 1200 }));
+    // 2. Cascata das Palavras
+    word1Opacity.value = withDelay(1000, withTiming(1, { duration: 800 }));
+    word2Opacity.value = withDelay(1400, withTiming(1, { duration: 800 }));
+    word3Opacity.value = withDelay(1800, withTiming(1, { duration: 800 }));
 
-    // 4. Transição sutil para a Welcome
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        router.replace('/welcome');
-      }
-    }, 4800);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [router]);
+    // 3. Transita para a Welcome de forma suave
+    setTimeout(() => {
+      router.replace('/welcome');
+    }, 4500);
+  };
 
   const animatedProps = useAnimatedProps(() => ({ blurRadius: logoBlur.value }));
-  
-  return (
-    <View className="flex-1 bg-surface-base justify-center items-center">
-      
-      {/* A Linha de Luz (Horizonte) */}
-      <Animated.View style={[
-        styles.horizonLine,
-        useAnimatedStyle(() => ({ 
-          width: lineWidth.value, 
-          opacity: lineOpacity.value 
-        }))
-      ]} />
+  const animatedLogoStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [{ scale: logoScale.value }, { translateY: logoTranslateY.value }]
+  }));
 
-      {/* A Logo com Blur nativo */}
+  return (
+    <View className="flex-1 bg-white justify-center items-center">
+      
+      {/* O fundo estelar com as Constelações e Horizonte */}
+      <HorazionGalaxy onAnimationEnd={handleAnimationFinish} />
+
+      {/* A Logo */}
       <AnimatedImage 
         source={require('../assets/images/logo/life.png')}
-        style={[
-          styles.logo, 
-          useAnimatedStyle(() => ({ opacity: logoOpacity.value }))
-        ]}
+        style={[styles.logo, animatedLogoStyle]}
         animatedProps={animatedProps}
       />
 
-      {/* Subtítulo Premium */}
-      <Animated.Text 
-        className="absolute bottom-32 font-inter text-content-secondary uppercase text-xs font-medium"
-        style={[
-          useAnimatedStyle(() => ({ opacity: textOpacity.value })),
-          { letterSpacing: 3 } // 🔒 FIX: Usando número inteiro para RCTText, nada de 'em' ou 'px'
-        ]}
-      >
-        Conecte. Expanda. Viva.
-      </Animated.Text>
+      {/* Texto em Cascata Seguro (sem letterSpacing via CSS var) */}
+      <View style={styles.textContainer}>
+        <Animated.Text style={[styles.word, useAnimatedStyle(() => ({ opacity: word1Opacity.value }))]}>
+          CONECTE. 
+        </Animated.Text>
+        <Animated.Text style={[styles.word, useAnimatedStyle(() => ({ opacity: word2Opacity.value }))]}>
+          EXPANDA. 
+        </Animated.Text>
+        <Animated.Text style={[styles.word, { color: '#B6192E' }, useAnimatedStyle(() => ({ opacity: word3Opacity.value }))]}>
+          VIVA.
+        </Animated.Text>
+      </View>
+      
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  horizonLine: {
-    height: 1.5,
-    backgroundColor: HZ_BRAND_COLOR,
-    position: 'absolute',
-    shadowColor: HZ_BRAND_COLOR,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  logo: {
-    width: 220,
-    height: 70,
-    resizeMode: 'contain',
-    position: 'absolute',
-  }
+  logo: { width: 260, height: 90, resizeMode: 'contain', position: 'absolute' },
+  textContainer: { position: 'absolute', bottom: 120, flexDirection: 'row', gap: 8 },
+  word: { fontFamily: 'Inter', color: '#71717A', fontSize: 12, fontWeight: '700', letterSpacing: 3 }
 });
