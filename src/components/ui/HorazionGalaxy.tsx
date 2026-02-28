@@ -1,6 +1,6 @@
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
 import React, { useEffect, useMemo } from "react";
-import { Dimensions, StyleSheet } from "react-native";
+import { StyleSheet, useWindowDimensions } from "react-native";
 import {
   Easing,
   SharedValue,
@@ -11,7 +11,6 @@ import {
 } from "react-native-reanimated";
 import { usePerceptionStore } from "../../store/usePerceptionStore";
 
-const { width, height } = Dimensions.get("window");
 const HZ_RED = "#B6192E";
 const STAR_COUNT = 150;
 
@@ -32,17 +31,20 @@ interface HorazionGalaxyProps {
   onAnimationEnd: () => void;
 }
 
+// Passamos o screenHeight para a Estrela saber o limite da tela dinamicamente
 const Star = ({
   data,
   clock,
+  screenHeight,
 }: {
   data: StarData;
   clock: SharedValue<number>;
+  screenHeight: number;
 }) => {
   const transform = useDerivedValue(() => {
     const time = clock.value;
-    const newY = (data.y - time * data.speed * 50) % height;
-    const finalY = newY < 0 ? newY + height : newY;
+    const newY = (data.y - time * data.speed * 50) % screenHeight;
+    const finalY = newY < 0 ? newY + screenHeight : newY;
     const rotation = time * data.rotationSpeed;
 
     return [
@@ -53,7 +55,7 @@ const Star = ({
       { translateX: -12 },
       { translateY: -12 },
     ];
-  }, [clock]);
+  }, [clock, screenHeight]);
 
   return (
     <Path
@@ -68,6 +70,8 @@ const Star = ({
 
 export const HorazionGalaxy = ({ onAnimationEnd }: HorazionGalaxyProps) => {
   const { state: perceptionState } = usePerceptionStore();
+  const { width, height } = useWindowDimensions(); // Pega o tamanho real e atualizado da tela
+  
   const opacity = useSharedValue(1);
   const clock = useSharedValue(0);
   const animationDuration = perceptionState.motionReduction ? 2000 : 4000;
@@ -81,7 +85,7 @@ export const HorazionGalaxy = ({ onAnimationEnd }: HorazionGalaxyProps) => {
       initialOpacity: Math.random() * 0.6 + 0.2,
       rotationSpeed: (Math.random() - 0.5) * 2,
     }));
-  }, []);
+  }, [width, height]); // Recalcula se a tela mudar
 
   useEffect(() => {
     clock.value = withRepeat(
@@ -93,13 +97,13 @@ export const HorazionGalaxy = ({ onAnimationEnd }: HorazionGalaxyProps) => {
       onAnimationEnd();
     }, animationDuration);
     return () => clearTimeout(timer);
-  }, []);
+  }, [animationDuration]);
 
   return (
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
       <Group opacity={opacity}>
         {stars.map((star, index) => (
-          <Star key={index} data={star} clock={clock} />
+          <Star key={index} data={star} clock={clock} screenHeight={height} />
         ))}
       </Group>
     </Canvas>
