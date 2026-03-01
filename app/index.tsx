@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, StyleSheet, Dimensions, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { 
   useSharedValue, 
@@ -7,80 +7,105 @@ import Animated, {
   withTiming, 
   withDelay,
   Easing,
-  useAnimatedProps
+  runOnJS
 } from 'react-native-reanimated';
 import { HorazionGalaxy } from '../src/components/ui/HorazionGalaxy';
 
+const { width } = Dimensions.get('window');
+
+// Criação segura do componente animado
 const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+// Bezier Curve segura (Apple Style)
+const PREMIUM_EASE = Easing.bezier(0.25, 0.1, 0.25, 1);
 
 export default function IntroScreen() {
   const router = useRouter();
   
   const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.7); 
-  const logoTranslateY = useSharedValue(40);
-  const logoBlur = useSharedValue(25);
+  const logoScale = useSharedValue(0.85); 
+  const logoTranslateY = useSharedValue(20);
+  const textOpacity = useSharedValue(0);
 
-  const word1Opacity = useSharedValue(0);
-  const word2Opacity = useSharedValue(0);
-  const word3Opacity = useSharedValue(0);
-
-  const handleAnimationFinish = () => {
-    // 1. Logo emerge majestosamente do Horizonte
-    logoOpacity.value = withTiming(1, { duration: 1800, easing: Easing.out(Easing.cubic) });
-    logoScale.value = withTiming(1, { duration: 1800, easing: Easing.out(Easing.cubic) });
-    logoTranslateY.value = withTiming(0, { duration: 1800, easing: Easing.out(Easing.cubic) });
-    logoBlur.value = withTiming(0, { duration: 1500 });
+  const handleAnimationFinish = useCallback(() => {
+    logoOpacity.value = withTiming(1, { duration: 1200, easing: PREMIUM_EASE });
+    logoScale.value = withTiming(1, { duration: 1200, easing: PREMIUM_EASE });
+    logoTranslateY.value = withTiming(0, { duration: 1200, easing: PREMIUM_EASE });
     
-    // 2. Cascata das Palavras
-    word1Opacity.value = withDelay(1000, withTiming(1, { duration: 800 }));
-    word2Opacity.value = withDelay(1400, withTiming(1, { duration: 800 }));
-    word3Opacity.value = withDelay(1800, withTiming(1, { duration: 800 }));
+    textOpacity.value = withDelay(600, withTiming(1, { duration: 800 }));
 
-    // 3. Transita para a Welcome de forma suave
     setTimeout(() => {
-      router.replace('/welcome');
-    }, 4500);
-  };
+      runOnJS(router.replace)('/welcome');
+    }, 4000);
+  }, []);
 
-  const animatedProps = useAnimatedProps(() => ({ blurRadius: logoBlur.value }));
   const animatedLogoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }, { translateY: logoTranslateY.value }]
+    transform: [
+      { scale: logoScale.value }, 
+      { translateY: logoTranslateY.value }
+    ]
+  }));
+
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
   }));
 
   return (
-    <View className="flex-1 bg-white justify-center items-center">
-      
-      {/* O fundo estelar com as Constelações e Horizonte */}
+    <View style={styles.container}>
       <HorazionGalaxy onAnimationEnd={handleAnimationFinish} />
 
-      {/* A Logo */}
-      <AnimatedImage 
-        source={require('../assets/images/logo/life.png')}
-        style={[styles.logo, animatedLogoStyle]}
-        animatedProps={animatedProps}
-      />
+      <View style={styles.contentContainer}>
+        {/* Logo Seguro: Sem blurRadius animado */}
+        <AnimatedImage 
+          source={require('../assets/images/logo/life.png')}
+          style={[styles.logo, animatedLogoStyle]}
+          resizeMode="contain"
+        />
 
-      {/* Texto em Cascata Seguro (sem letterSpacing via CSS var) */}
-      <View style={styles.textContainer}>
-        <Animated.Text style={[styles.word, useAnimatedStyle(() => ({ opacity: word1Opacity.value }))]}>
-          CONECTE. 
-        </Animated.Text>
-        <Animated.Text style={[styles.word, useAnimatedStyle(() => ({ opacity: word2Opacity.value }))]}>
-          EXPANDA. 
-        </Animated.Text>
-        <Animated.Text style={[styles.word, { color: '#B6192E' }, useAnimatedStyle(() => ({ opacity: word3Opacity.value }))]}>
-          VIVA.
-        </Animated.Text>
+        <Animated.View style={[styles.textContainer, animatedTextStyle]}>
+          <Animated.Text style={styles.word}>CONECTE.</Animated.Text>
+          <Animated.Text style={styles.word}>EXPANDA.</Animated.Text>
+          <Animated.Text style={[styles.word, styles.brandWord]}>VIVA.</Animated.Text>
+        </Animated.View>
       </View>
-      
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  logo: { width: 260, height: 90, resizeMode: 'contain', position: 'absolute' },
-  textContainer: { position: 'absolute', bottom: 120, flexDirection: 'row', gap: 8 },
-  word: { fontFamily: 'Inter', color: '#71717A', fontSize: 12, fontWeight: '700', letterSpacing: 3 }
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contentContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  logo: { 
+    width: width * 0.55, 
+    height: 90, 
+    marginBottom: 50 
+  },
+  textContainer: { 
+    flexDirection: 'row', 
+    gap: 12,
+    position: 'absolute',
+    bottom: -60,
+  },
+  word: { 
+    // Se a fonte Inter não estiver carregada, o app não quebra, usa a padrão do sistema
+    fontFamily: 'SpaceMono-Regular', 
+    color: '#71717A', 
+    fontSize: 11, 
+    fontWeight: '600', 
+    letterSpacing: 3 
+  },
+  brandWord: {
+    color: '#B6192E',
+    fontWeight: '700'
+  }
 });

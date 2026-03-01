@@ -1,85 +1,117 @@
 import React, { useEffect } from 'react';
-import { View, Dimensions, StyleSheet } from 'react-native';
+import { View, StyleSheet, Dimensions, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withTiming, 
   Easing,
-  useAnimatedScrollHandler,
+  runOnJS,
+  useAnimatedScrollHandler
 } from 'react-native-reanimated';
 
+import { PhoneMockupFeed } from '../src/components/ui/MockFeed'; 
 import { HeroSection, VisionSection, AccessibilitySection, ContactSection } from '../src/components/welcome/WelcomeSections';
 
-const { height } = Dimensions.get('window');
-const HZ_BRAND_COLOR = '#B6192E';
+const { width, height } = Dimensions.get('window');
+const HZ_BRAND = "#B6192E";
+const MAX_SCALE = Math.max(width, height) / 20;
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const scrollY = useSharedValue(0);
   
   const screenOpacity = useSharedValue(0);
-  const horizonScale = useSharedValue(0);
-  const horizonOpacity = useSharedValue(0);
+  const screenTranslateY = useSharedValue(20);
+  const scrollY = useSharedValue(0);
+
+  const portalScale = useSharedValue(0);
+  const portalOpacity = useSharedValue(0);
 
   useEffect(() => {
-    screenOpacity.value = withTiming(1, { duration: 1200, easing: Easing.out(Easing.cubic) });
+    screenOpacity.value = withTiming(1, { duration: 800 });
+    screenTranslateY.value = withTiming(0, { duration: 800, easing: Easing.out(Easing.quad) });
   }, []);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
 
-  const handleAction = (actionType: 'register' | 'login') => {
-    horizonOpacity.value = 1;
-    horizonScale.value = withTiming(60, { duration: 900, easing: Easing.inOut(Easing.ease) });
-    
-    setTimeout(() => {
-      // router.push(`/${actionType}`); 
-      console.log(`Iniciando transição para: ${actionType}`);
-    }, 800);
+  const handleAction = (route: string) => {
+    portalOpacity.value = 1;
+    portalScale.value = withTiming(MAX_SCALE, { 
+      duration: 800, 
+      easing: Easing.bezier(0.65, 0, 0.35, 1) 
+    }, (finished) => {
+      if (finished) {
+        runOnJS(router.push)(`/${route}` as any);
+      }
+    });
   };
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+    transform: [{ translateY: screenTranslateY.value }]
+  }));
+
+  const portalStyle = useAnimatedStyle(() => ({
+    opacity: portalOpacity.value,
+    transform: [{ scale: portalScale.value }]
+  }));
+
   return (
-    <Animated.View style={[{ flex: 1, backgroundColor: '#FFFFFF' }, useAnimatedStyle(() => ({ opacity: screenOpacity.value }))]}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       
       <Animated.ScrollView 
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        bounces={false}
-        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        style={[styles.scroll, animatedStyle]}
       >
-        <HeroSection scrollY={scrollY} onAction={handleAction} />
+        <View style={styles.mockupWrapper}>
+          <View style={{ transform: [{ scale: 0.9 }] }}>
+            <PhoneMockupFeed />
+          </View>
+        </View>
+
+        <HeroSection scrollY={scrollY} onAction={(t: any) => handleAction(t || 'login')} />
         <VisionSection />
         <AccessibilitySection />
-        <ContactSection />
+        <ContactSection /> 
       </Animated.ScrollView>
 
-      {/* OVERLAY DE TRANSIÇÃO (Atravessar o Horizonte Vermelho) */}
-      <Animated.View 
-        pointerEvents="none"
-        style={[
-          styles.horizonTransition, 
-          useAnimatedStyle(() => ({ 
-            opacity: horizonOpacity.value, 
-            transform: [{ scale: horizonScale.value }] 
-          }))
-        ]} 
-      />
-    </Animated.View>
+      <View style={styles.portalContainer} pointerEvents="none">
+        <Animated.View style={[styles.portal, portalStyle]} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  horizonTransition: {
-    position: 'absolute',
-    alignSelf: 'center',
-    top: height / 2,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: HZ_BRAND_COLOR,
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scroll: {
+    flex: 1,
+  },
+  mockupWrapper: {
+    alignItems: 'center',
+    paddingTop: 60,
+    marginBottom: -40,
+    zIndex: 1,
+  },
+  portalContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 9999,
+  },
+  portal: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: HZ_BRAND,
   }
 });
