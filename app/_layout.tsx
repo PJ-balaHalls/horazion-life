@@ -1,13 +1,16 @@
 import { Stack } from 'expo-router';
-import '../src/styles/global.css';
+import React from 'react';
+import { StatusBar } from 'react-native';
 
 export default function Layout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="welcome" />
-      {/* ⚠️ MANTENHA COMENTADO ATÉ CRIAR O ARQUIVO app/login.tsx */}
-      {/* <Stack.Screen name="login" /> */}
-    </Stack>
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+        {/* Registra as telas explicitamente */}
+        <Stack.Screen name="index" />
+        <Stack.Screen name="welcome" options={{ animation: 'fade_from_bottom' }} />
+      </Stack>
+    </>
   );
 }
