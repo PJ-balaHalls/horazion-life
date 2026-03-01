@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, useWindowDimensions } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { Canvas, Group, BlurMask, Rect, Path, Skia } from "@shopify/react-native-skia";
 import {
   useDerivedValue,
@@ -10,14 +10,14 @@ import {
   interpolate,
 } from "react-native-reanimated";
 
-// CONFIGURAÇÃO DE SEGURANÇA E PERFORMANCE
-const STAR_COUNT = 80; 
-const HZ_BRAND = "#B6192E";
-const HZ_WHITE = "#FFFFFF";
+// ARCH-HZ: Design System "Horizon Clarity" - WHITE MODE
+const PARTICLE_COUNT = 50; // Quantidade refinada para elegância
+const HZ_BRAND = "#B6192E"; // Vermelho Puro
+const HZ_BG = "#FFFFFF";    // Branco Puro
 
-// SVG Otimizado
-const STAR_SVG = "M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z";
-const skiaStarPath = Skia.Path.MakeFromSVGString(STAR_SVG)!;
+// Geometria: Losango Minimalista (Diamante)
+const PARTICLE_SVG = "M10 0L20 10L10 20L0 10Z";
+const skiaParticlePath = Skia.Path.MakeFromSVGString(PARTICLE_SVG)!;
 
 interface Star3D {
   id: number;
@@ -34,19 +34,28 @@ interface Props {
 
 const project3D = (star: Star3D, timeVal: number, width: number, height: number) => {
   "worklet";
-  let currentZ = star.z - (timeVal * 150); 
+  // Movimento Z: As estrelas vêm do fundo para a tela (positivo)
+  let currentZ = star.z - (timeVal * 80); 
+  
+  // Loop infinito suave
   if (currentZ < 1) currentZ = 1200 + (currentZ % 1200);
   
-  const perspective = 300 / (currentZ || 1);
+  const perspective = 350 / (currentZ || 1);
   const projectedX = (star.x - width / 2) * perspective + width / 2;
   const projectedY = (star.y - height / 2) * perspective + height / 2;
-  const scale = Math.max(0.0, perspective * star.size);
-  const opacity = interpolate(currentZ, [0, 100, 800, 1200], [0, 1, 0.6, 0]);
+  
+  const scale = Math.max(0.0, perspective * star.size * 0.5);
+  
+  // Opacidade: Transparência calculada para não "estourar" na tela
+  // Longe (1200) -> 0
+  // Médio (600) -> 0.8
+  // Perto (100) -> 0 (desaparece antes de bater na lente)
+  const opacity = interpolate(currentZ, [0, 150, 600, 1200], [0, 1, 0.6, 0]);
   
   return { projectedX, projectedY, scale, opacity, rotation: timeVal * star.rotationSpeed };
 };
 
-const StarComponent = ({ data, time, width, height }: { data: Star3D; time: any; width: number; height: number }) => {
+const ParticleComponent = ({ data, time, width, height }: { data: Star3D; time: any; width: number; height: number }) => {
   const transform = useDerivedValue(() => {
     const p = project3D(data, time.value, width, height);
     return [
@@ -54,8 +63,8 @@ const StarComponent = ({ data, time, width, height }: { data: Star3D; time: any;
       { translateY: p.projectedY },
       { scale: p.scale },
       { rotate: p.rotation },
-      { translateX: -12 },
-      { translateY: -12 },
+      { translateX: -10 }, // Ajuste de centro do SVG 20x20
+      { translateY: -10 },
     ];
   });
 
@@ -63,7 +72,8 @@ const StarComponent = ({ data, time, width, height }: { data: Star3D; time: any;
 
   return (
     <Group transform={transform} opacity={opacity}>
-      <Path path={skiaStarPath} color={HZ_WHITE} style="fill" />
+      {/* COR VERMELHA DA MARCA NAS ESTRELAS */}
+      <Path path={skiaParticlePath} color={HZ_BRAND} style="fill" />
     </Group>
   );
 };
@@ -74,29 +84,29 @@ export const HorazionGalaxy = ({ onAnimationEnd }: Props) => {
   const globalOpacity = useSharedValue(0);
   const horizonWidth = useSharedValue(0);
 
-  const stars = useMemo<Star3D[]>(() => {
-    return Array.from({ length: STAR_COUNT }).map((_, i) => ({
+  const particles = useMemo<Star3D[]>(() => {
+    return Array.from({ length: PARTICLE_COUNT }).map((_, i) => ({
       id: i,
-      x: (Math.random() - 0.5) * width * 5, 
-      y: (Math.random() - 0.5) * height * 5,
+      x: (Math.random() - 0.5) * width * 4, // Espalhar bem
+      y: (Math.random() - 0.5) * height * 4,
       z: Math.random() * 1200,
-      size: Math.random() * 0.6 + 0.2,
-      rotationSpeed: (Math.random() - 0.5) * 3,
+      size: Math.random() * 0.8 + 0.3, 
+      rotationSpeed: (Math.random() - 0.5) * 1.5,
     }));
   }, [width, height]);
 
   useEffect(() => {
     globalOpacity.value = withTiming(1, { duration: 1500 });
     
-    // Easing Linear para loop infinito (seguro)
+    // Animação Contínua
     time.value = withRepeat(
-      withTiming(100, { duration: 40000, easing: Easing.linear }), 
+      withTiming(100, { duration: 50000, easing: Easing.linear }), 
       -1
     );
 
-    // Easing Bezier para o horizonte (seguro)
-    horizonWidth.value = withTiming(width * 0.9, { 
-      duration: 3000, 
+    // Horizonte Expandindo
+    horizonWidth.value = withTiming(width * 0.85, { 
+      duration: 2500, 
       easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
     });
 
@@ -106,53 +116,47 @@ export const HorazionGalaxy = ({ onAnimationEnd }: Props) => {
     }
   }, []);
 
-  // --- SOLUÇÃO DEFINITIVA: Decomposição de Valores ---
-  // Em vez de passar um objeto {x,y,w,h} que o Skia pode não entender,
-  // passamos valores primitivos derivados. É à prova de falhas.
-  
+  // Decomposição segura para o Skia (Evita crash no Android)
   const rX = useDerivedValue(() => (width - horizonWidth.value) / 2);
   const rY = useDerivedValue(() => height / 2);
   const rWidth = useDerivedValue(() => horizonWidth.value);
-  // Altura fixa não precisa de derived value se não animar, mas para compatibilidade mantemos simples
-  const rHeight = 2; 
+  const rHeight = 1; // Linha ultra-fina
 
   return (
-    <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Group opacity={globalOpacity}>
-        {stars.map((star) => (
-          <StarComponent 
-            key={star.id} 
-            data={star} 
-            time={time} 
-            width={width} 
-            height={height} 
-          />
-        ))}
+    // FORÇANDO FUNDO BRANCO NA VIEW CONTAINER
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: HZ_BG }]}>
+      <Canvas style={{ flex: 1 }} pointerEvents="none">
+        <Group opacity={globalOpacity}>
+          {particles.map((p) => (
+            <ParticleComponent 
+              key={p.id} 
+              data={p} 
+              time={time} 
+              width={width} 
+              height={height} 
+            />
+          ))}
 
-        {/* HORIZONTE BLINDADO */}
-        <Group>
-          {/* Passando props individuais: x, y, width, height. Zero ambiguidade. */}
-          <Rect 
-            x={rX} 
-            y={rY} 
-            width={rWidth} 
-            height={rHeight} 
-            color={HZ_BRAND} 
-            opacity={0.8}
-          >
-             <BlurMask blur={20} style="normal" />
-          </Rect>
-          
-          <Rect 
-            x={rX} 
-            y={rY} 
-            width={rWidth} 
-            height={rHeight} 
-            color={HZ_WHITE} 
-            opacity={0.6} 
-          />
+          {/* Horizonte Vermelho */}
+          <Group>
+            {/* Glow Sutil */}
+            <Rect 
+              x={rX} y={rY} width={rWidth} height={4} 
+              color={HZ_BRAND} 
+              opacity={0.3}
+            >
+              <BlurMask blur={8} style="normal" />
+            </Rect>
+            
+            {/* Linha Sólida */}
+            <Rect 
+              x={rX} y={rY} width={rWidth} height={rHeight} 
+              color={HZ_BRAND} 
+              opacity={1} 
+            />
+          </Group>
         </Group>
-      </Group>
-    </Canvas>
+      </Canvas>
+    </View>
   );
 };

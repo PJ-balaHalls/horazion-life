@@ -10,26 +10,31 @@ import Animated, {
   useAnimatedScrollHandler
 } from 'react-native-reanimated';
 
+// Importa o MockFeed (NÃO FOI REFATORADO, APENAS USADO)
 import { PhoneMockupFeed } from '../src/components/ui/MockFeed'; 
-import { HeroSection, VisionSection, AccessibilitySection, ContactSection } from '../src/components/welcome/WelcomeSections';
+
+// Importa as novas seções separadas
+import { 
+  HeroTextSection, 
+  FeaturesSection, 
+  AccessibilityNote, 
+  FooterSection 
+} from '../src/components/welcome/WelcomeSections';
 
 const { width, height } = Dimensions.get('window');
-const HZ_BRAND = "#B6192E";
+const HZ_RED = "#B6192E";
 const MAX_SCALE = Math.max(width, height) / 20;
 
 export default function WelcomeScreen() {
   const router = useRouter();
   
-  const screenOpacity = useSharedValue(0);
-  const screenTranslateY = useSharedValue(20);
   const scrollY = useSharedValue(0);
-
+  const screenOpacity = useSharedValue(0);
   const portalScale = useSharedValue(0);
   const portalOpacity = useSharedValue(0);
 
   useEffect(() => {
     screenOpacity.value = withTiming(1, { duration: 800 });
-    screenTranslateY.value = withTiming(0, { duration: 800, easing: Easing.out(Easing.quad) });
   }, []);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -48,9 +53,8 @@ export default function WelcomeScreen() {
     });
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
+  const containerStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
-    transform: [{ translateY: screenTranslateY.value }]
   }));
 
   const portalStyle = useAnimatedStyle(() => ({
@@ -66,21 +70,29 @@ export default function WelcomeScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        style={[styles.scroll, animatedStyle]}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        style={[styles.scrollView, containerStyle]}
       >
-        <View style={styles.mockupWrapper}>
-          <View style={{ transform: [{ scale: 0.9 }] }}>
+        {/* 1. TEXTO HERO & AÇÕES */}
+        <HeroTextSection onAction={handleAction} />
+
+        {/* 2. MOCKUP FEED (Visual Anchor - ÚNICA INSTÂNCIA) */}
+        <View style={styles.mockupContainer}>
+          <View style={{ transform: [{ scale: 0.95 }] }}>
             <PhoneMockupFeed />
           </View>
         </View>
 
-        <HeroSection scrollY={scrollY} onAction={(t: any) => handleAction(t || 'login')} />
-        <VisionSection />
-        <AccessibilitySection />
-        <ContactSection /> 
+        {/* 3. FUNCIONALIDADES & CONCEITO */}
+        <FeaturesSection />
+        
+        {/* 4. RODAPÉ */}
+        <AccessibilityNote />
+        <FooterSection /> 
+
       </Animated.ScrollView>
 
+      {/* PORTAL DE TRANSIÇÃO */}
       <View style={styles.portalContainer} pointerEvents="none">
         <Animated.View style={[styles.portal, portalStyle]} />
       </View>
@@ -93,13 +105,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  scroll: {
+  scrollView: {
     flex: 1,
   },
-  mockupWrapper: {
+  mockupContainer: {
     alignItems: 'center',
-    paddingTop: 60,
-    marginBottom: -40,
+    marginBottom: 40,
+    marginTop: -20, // Leve sobreposição visual
     zIndex: 1,
   },
   portalContainer: {
@@ -112,6 +124,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: HZ_BRAND,
+    backgroundColor: HZ_RED,
   }
 });

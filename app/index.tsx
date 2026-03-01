@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, StyleSheet, Dimensions, Image, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { 
   useSharedValue, 
@@ -12,31 +12,35 @@ import Animated, {
 import { HorazionGalaxy } from '../src/components/ui/HorazionGalaxy';
 
 const { width } = Dimensions.get('window');
-
-// Criação segura do componente animado
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
-// Bezier Curve segura (Apple Style)
-const PREMIUM_EASE = Easing.bezier(0.25, 0.1, 0.25, 1);
+// Easing Premium
+const PREMIUM_EASE = Easing.bezier(0.16, 1, 0.3, 1);
 
 export default function IntroScreen() {
   const router = useRouter();
   
   const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.85); 
-  const logoTranslateY = useSharedValue(20);
+  const logoScale = useSharedValue(0.9); 
+  const logoTranslateY = useSharedValue(15);
+  
   const textOpacity = useSharedValue(0);
+  const textTranslateY = useSharedValue(10);
 
   const handleAnimationFinish = useCallback(() => {
-    logoOpacity.value = withTiming(1, { duration: 1200, easing: PREMIUM_EASE });
-    logoScale.value = withTiming(1, { duration: 1200, easing: PREMIUM_EASE });
-    logoTranslateY.value = withTiming(0, { duration: 1200, easing: PREMIUM_EASE });
+    // 1. Logo emerge
+    logoOpacity.value = withTiming(1, { duration: 1500, easing: PREMIUM_EASE });
+    logoScale.value = withTiming(1, { duration: 1500, easing: PREMIUM_EASE });
+    logoTranslateY.value = withTiming(0, { duration: 1500, easing: PREMIUM_EASE });
     
-    textOpacity.value = withDelay(600, withTiming(1, { duration: 800 }));
+    // 2. Texto
+    textOpacity.value = withDelay(600, withTiming(1, { duration: 1000 }));
+    textTranslateY.value = withDelay(600, withTiming(0, { duration: 1000, easing: PREMIUM_EASE }));
 
+    // 3. Navegação
     setTimeout(() => {
       runOnJS(router.replace)('/welcome');
-    }, 4000);
+    }, 4500);
   }, []);
 
   const animatedLogoStyle = useAnimatedStyle(() => ({
@@ -49,23 +53,30 @@ export default function IntroScreen() {
 
   const animatedTextStyle = useAnimatedStyle(() => ({
     opacity: textOpacity.value,
+    transform: [{ translateY: textTranslateY.value }]
   }));
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      {/* BACKGROUND BRANCO E ESTRELAS VERMELHAS */}
       <HorazionGalaxy onAnimationEnd={handleAnimationFinish} />
 
       <View style={styles.contentContainer}>
-        {/* Logo Seguro: Sem blurRadius animado */}
+        {/* LOGO */}
         <AnimatedImage 
           source={require('../assets/images/logo/life.png')}
           style={[styles.logo, animatedLogoStyle]}
           resizeMode="contain"
         />
 
+        {/* MANIFESTO */}
         <Animated.View style={[styles.textContainer, animatedTextStyle]}>
           <Animated.Text style={styles.word}>CONECTE.</Animated.Text>
+          <Animated.Text style={styles.dot}>•</Animated.Text>
           <Animated.Text style={styles.word}>EXPANDA.</Animated.Text>
+          <Animated.Text style={styles.dot}>•</Animated.Text>
           <Animated.Text style={[styles.word, styles.brandWord]}>VIVA.</Animated.Text>
         </Animated.View>
       </View>
@@ -76,7 +87,7 @@ export default function IntroScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#FFFFFF', // Garantia de fundo branco
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -86,26 +97,30 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   logo: { 
-    width: width * 0.55, 
-    height: 90, 
-    marginBottom: 50 
+    width: width * 0.6, 
+    height: 100, 
+    marginBottom: 40 
   },
   textContainer: { 
     flexDirection: 'row', 
-    gap: 12,
+    alignItems: 'center',
+    gap: 8,
     position: 'absolute',
-    bottom: -60,
+    bottom: -80,
   },
   word: { 
-    // Se a fonte Inter não estiver carregada, o app não quebra, usa a padrão do sistema
     fontFamily: 'SpaceMono-Regular', 
-    color: '#71717A', 
-    fontSize: 11, 
+    color: '#52525B', // Cinza Zinco (Elegante)
+    fontSize: 10, 
     fontWeight: '600', 
-    letterSpacing: 3 
+    letterSpacing: 2 
+  },
+  dot: {
+    color: '#E4E4E7',
+    fontSize: 10,
   },
   brandWord: {
-    color: '#B6192E',
+    color: '#B6192E', // Vermelho Horazion
     fontWeight: '700'
   }
 });
