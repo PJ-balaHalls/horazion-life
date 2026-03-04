@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, Dimensions, StatusBar, TouchableOpacity, Text } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -58,15 +58,23 @@ export default function WelcomeScreen() {
   const portalOpacity = useSharedValue(0);
   
   const [activeIndex, setActiveIndex] = useState(0);
-  // FE-HZ-006: Interface oculta por padrão
   const [isHeroHidden, setIsHeroHidden] = useState(true);
   
   const mockupOpacity = useSharedValue(0);
   const mockupScaleAnim = useSharedValue(0.9);
   const contentOpacity = useSharedValue(0);
   const contentTranslateY = useSharedValue(30);
-  // FE-HZ-006: Valor inicial 1 (Oculto)
   const hideHeroAnim = useSharedValue(1); 
+
+  // FE-HZ-008: Correção do Bug da "Tela Vermelha"
+  // Sempre que a tela ganhar foco novamente (quando o usuário clica em voltar),
+  // resetamos o portal para opacidade e escala 0.
+  useFocusEffect(
+    useCallback(() => {
+      portalOpacity.value = 0;
+      portalScale.value = 0;
+    }, [])
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -131,7 +139,6 @@ export default function WelcomeScreen() {
         <HorazionStar size={32} />
       </View>
       
-      {/* FE-HZ-006: Centralizado em Tablets, alinhado ao topo com offset em Mobiles */}
       <View style={styles.fixedBackground} pointerEvents="none">
         <Animated.View style={[styles.mockupWrapper, mockupStyle]}>
           <PhoneMockupFeed />
@@ -163,7 +170,6 @@ export default function WelcomeScreen() {
         <View style={styles.fullScreenSectionWhite}><StatusContent onNavigate={handleNavigation} /></View>
       </Animated.ScrollView>
 
-      {/* Botão de Restaurar Interface */}
       {isHeroHidden && (
         <Animated.View style={[styles.restoreBtnContainer, restoreBtnStyle]}>
           <TouchableOpacity style={styles.restoreBtn} onPress={toggleHeroVisibility} activeOpacity={0.8}>
@@ -173,7 +179,6 @@ export default function WelcomeScreen() {
         </Animated.View>
       )}
 
-      {/* Esconde a navbar se o usuário ocultar a UI para máxima imersão */}
       {!isHeroHidden && <DiscreetNavBar activeIndex={activeIndex} onJump={jumpToSection} total={4} />}
 
       <View style={styles.portalContainer} pointerEvents="none">
@@ -190,7 +195,6 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   topStarContainer: { position: 'absolute', top: 60, width: '100%', alignItems: 'center', zIndex: 50 },
   
-  // FE-HZ-006: Dinamismo para Tablets vs Mobile
   fixedBackground: { 
     ...StyleSheet.absoluteFillObject, 
     alignItems: 'center', 
