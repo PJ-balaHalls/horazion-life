@@ -27,7 +27,7 @@ const project3D = (star: Star3D, timeVal: number, width: number, height: number)
   const perspective = 300 / (currentZ || 1);
   const projectedX = (star.x - width / 2) * perspective + width / 2;
   const projectedY = (star.y - height / 2) * perspective + height / 2;
-  const scale = Math.max(0.0, perspective * star.size * 2.5); // Escala aumentada
+  const scale = Math.max(0.0, perspective * star.size * 2.5); 
   const opacity = interpolate(currentZ, [0, 100, 1500, 2000], [0, 1, 0.5, 0]);
   const rotation = timeVal * star.rotationSpeed + star.randomOffset;
 
@@ -68,8 +68,12 @@ export const HorazionGalaxy = () => {
     })), [width, height]);
 
   useEffect(() => {
-    globalOpacity.value = withTiming(1, { duration: 2000 });
-    time.value = withRepeat(withTiming(1000, { duration: 60000, easing: Easing.linear }), -1);
+    const startAnimations = setTimeout(() => {
+      globalOpacity.value = withTiming(1, { duration: 2000 });
+      time.value = withRepeat(withTiming(1000, { duration: 60000, easing: Easing.linear }), -1);
+    }, 300); 
+
+    return () => clearTimeout(startAnimations);
   }, []);
 
   return (
