@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+// CORREÇÃO: Platform adicionado ao import
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SupportHeader } from '../../src/components/support/SupportHeader';
-import { Code2, Blocks, Rocket, TerminalSquare } from 'lucide-react-native';
+import { Blocks, Rocket, TerminalSquare } from 'lucide-react-native';
 
 const HZ_BLACK = "#09090B";
 
@@ -14,7 +15,6 @@ export default function PartnerScreen() {
       />
       
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
         <View style={styles.devBox}>
           <View style={styles.terminalHeader}>
             <View style={styles.termDotRed} />
@@ -32,7 +32,7 @@ export default function PartnerScreen() {
         <View style={styles.textSection}>
           <Text style={styles.headline}>Extenda o Sistema Operativo.</Text>
           <Text style={styles.paragraph}>
-            A API Horazion permite que startups conectem os seus serviços diretamente aos Blocos Vivos dos nossos utilizadores. Se você tem uma app de meditação, finanças ou produtividade, traga-a para dentro do Life Feed.
+            A API Horazion permite que startups conectem os seus serviços diretamente aos Blocos Vivos dos nossos utilizadores.
           </Text>
         </View>
 
@@ -40,16 +40,15 @@ export default function PartnerScreen() {
           <View style={styles.featureBox}>
             <Blocks size={24} color={HZ_BLACK} style={{ marginBottom: 16 }} />
             <Text style={styles.featureTitle}>Widgets Nativos</Text>
-            <Text style={styles.featureDesc}>As suas funcionalidades renderizadas nativamente na nossa interface Clean White.</Text>
+            <Text style={styles.featureDesc}>Renderização nativa na interface Clean White.</Text>
           </View>
 
           <View style={styles.featureBox}>
             <Rocket size={24} color={HZ_BLACK} style={{ marginBottom: 16 }} />
             <Text style={styles.featureTitle}>Zero Trust Auth</Text>
-            <Text style={styles.featureDesc}>Acesso via Horizion ID com permissões granulares e segurança militar.</Text>
+            <Text style={styles.featureDesc}>Segurança militar via Horizion ID.</Text>
           </View>
         </View>
-
       </ScrollView>
 
       <View style={styles.footer}>
@@ -65,8 +64,7 @@ export default function PartnerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   scrollContent: { padding: 24, paddingBottom: 40 },
-  
-  devBox: { backgroundColor: '#18181B', borderRadius: 24, overflow: 'hidden', marginBottom: 40, shadowColor: "#000", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 24 },
+  devBox: { backgroundColor: '#18181B', borderRadius: 24, overflow: 'hidden', marginBottom: 40 },
   terminalHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272A', paddingVertical: 12, paddingHorizontal: 16, gap: 8 },
   termDotRed: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' },
   termDotYellow: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#F59E0B' },
@@ -75,16 +73,13 @@ const styles = StyleSheet.create({
   terminalBody: { padding: 24, gap: 12 },
   codeText: { color: '#E4E4E7', fontSize: 13, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
   codeSuccess: { color: '#10B981', fontSize: 13, marginTop: 8, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
-
   textSection: { marginBottom: 40 },
-  headline: { fontSize: 24, fontWeight: '900', color: HZ_BLACK, letterSpacing: -0.5, marginBottom: 12 },
+  headline: { fontSize: 24, fontWeight: '900', color: HZ_BLACK, marginBottom: 12 },
   paragraph: { fontSize: 15, color: '#71717A', lineHeight: 24 },
-
   gridFeatures: { flexDirection: 'row', gap: 16 },
   featureBox: { flex: 1, padding: 24, backgroundColor: '#FFFFFF', borderRadius: 32, borderWidth: StyleSheet.hairlineWidth, borderColor: '#E4E4E7' },
   featureTitle: { fontSize: 15, fontWeight: '800', color: HZ_BLACK, marginBottom: 8 },
   featureDesc: { fontSize: 13, color: '#71717A', lineHeight: 20 },
-
   footer: { padding: 24, paddingBottom: 40, backgroundColor: '#FFFFFF' },
   docsBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: HZ_BLACK, paddingVertical: 20, borderRadius: 32 },
   docsBtnText: { color: '#FFF', fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },

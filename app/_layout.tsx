@@ -7,9 +7,10 @@ export default function Layout() {
     <>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-        {/* Registra as telas explicitamente */}
         <Stack.Screen name="index" />
-        <Stack.Screen name="welcome" options={{ animation: 'fade_from_bottom' }} />
+        <Stack.Screen name="welcome" />
+        {/* Registro explícito da rota na subpasta */}
+        <Stack.Screen name="auth/login" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </>
   );
