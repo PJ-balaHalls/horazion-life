@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-// Definição das cenas para o fluxo de UX
 type AuthScene = 'CHOICE' | 'LOGIN' | 'INSTITUTIONAL' | 'PASSWORD_SET';
 
 interface AuthState {
