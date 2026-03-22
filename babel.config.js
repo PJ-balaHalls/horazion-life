@@ -3,7 +3,9 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      // O Reanimated DEVE ser o último plugin da lista
+      // FE-HZ: Adicionado plugin do NativeWind necessário para compilar as classes do Tailwind
+      'nativewind/babel',
+      // ARCH-HZ: O Reanimated DEVE obrigatoriamente ser o último plugin da lista
       'react-native-reanimated/plugin',
     ],
   };
