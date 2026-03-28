@@ -1,200 +1,92 @@
 // app/auth/login.tsx
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInRight, SlideInUp, SlideOutUp } from 'react-native-reanimated';
-import { User, ShieldCheck, ArrowLeft, Building2, Lock, Mail, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-// Imports de Core e Design System
-import { useAuthStore } from '../../src/store/useAuthStore'; 
-import { ModernInput } from '../../src/components/auth/ModernInput';
-import { supabase } from '../../src/lib/supabase';
-import { AuthErrors, HorizionError } from '../../src/utils/errors';
-import { isValidCPF, formatCPF } from '../../src/utils/validators';
-
-const HZ_RED = "#B6192E";
-const HZ_BLACK = "#09090B";
+import { Box, Text } from '@shopify/restyle';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ClarityInput } from '../../src/components/atoms/ClarityInput';
+import { ClarityButton } from '../../src/components/atoms/ClarityButton';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { currentScene, setScene, setTempUser, tempUser, reset } = useAuthStore();
-  
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState(''); // Pode ser HorizionID ou Email
   const [password, setPassword] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  // Estado para o nosso Popup de Erro Customizado
-  const [activeError, setActiveError] = useState<HorizionError | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const showError = (error: HorizionError) => {
-    setActiveError(error);
-    setTimeout(() => setActiveError(null), 5000); // Auto-dismiss após 5s
-  };
-
-  const handleVerifyCpf = async () => {
-    const cleanCpf = cpf.replace(/\D/g, '');
+  const handleLogin = () => {
+    setIsLoading(true);
     
-    // 1. Validação Local (UX)
-    if (!isValidCPF(cleanCpf)) {
-      showError(AuthErrors.INVALID_CPF);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // 2. Validação no Servidor (Zero Trust)
-      const { data, error } = await supabase.rpc('check_institutional_access', { p_cpf: cleanCpf });
+    // CORE-HZ: Simulação de chamada ao backend (Supabase)
+    setTimeout(() => {
+      setIsLoading(false);
       
-      if (error) throw error;
-
-      if (data && data[0]?.user_exists) {
-        setTempUser(data[0].user_name, cleanCpf);
-        setScene('PASSWORD_SET');
-      } else {
-        showError(AuthErrors.USER_NOT_FOUND);
-      }
-    } catch (err) {
-      showError(AuthErrors.NETWORK_ERROR);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        showError(AuthErrors.INVALID_CREDENTIALS);
+      // Cenário 1: Usuário criado pelo Admin, conta "pending_completion"
+      // Aqui interceptamos e mandamos para a Cena 1 de reivindicação.
+      if (password === 'temp123') { 
+        router.replace('/auth/setup/01-identity');
         return;
       }
-      // Aqui entrará o roteamento para o ecossistema (próxima etapa)
-    } catch (err) {
-      showError(AuthErrors.NETWORK_ERROR);
-    } finally {
-      setLoading(false);
-    }
+
+      // Cenário 2: Usuário ativo (Login normal)
+      if (identifier === '@admin' && password === 'admin') {
+        router.replace('/(tabs)'); // Rota principal do app
+      } else {
+        alert('Credenciais inválidas. (Use senha "temp123" para testar o setup)');
+      }
+    }, 1500);
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-      
-      {/* Sistema de Notificação Integrado (Horizon Clarity) */}
-      {activeError && (
-        <Animated.View entering={SlideInUp} exiting={SlideOutUp} style={styles.errorToast}>
-          <AlertCircle color={HZ_RED} size={24} />
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text style={styles.errorTitle}>{activeError.user_message}</Text>
-            <Text style={styles.errorDesc}>{activeError.explanation}</Text>
-            <Text style={styles.errorSol}>{activeError.solution} ({activeError.error_code})</Text>
-          </View>
-        </Animated.View>
-      )}
+    <Box flex={1} backgroundColor="bg" paddingHorizontal="xl" justifyContent="center">
+      <Animated.View entering={FadeInDown.duration(800)}>
+        {/* Logo/Marca Institucional */}
+        <Box marginBottom="xxl" alignItems="center">
+          <Text variant="h1" letterSpacing={-1}>HORAZION</Text>
+          <Text variant="subText" color="gray1" letterSpacing={4}>LIFE</Text>
+        </Box>
 
-      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: '#FFF' }} bounces={false}>
-        <View style={styles.scene}>
-          
-          {currentScene === 'CHOICE' && (
-             // ... [Seu código anterior do CHOICE mantido exatamente igual]
-            <Animated.View entering={FadeIn} exiting={FadeOut}>
-              <Text style={styles.title}>Portal de Identidade</Text>
-              <Text style={styles.subtitle}>Conecte-se ao seu ecossistema Horazion.</Text>
-              
-              <TouchableOpacity onPress={() => setScene('LOGIN')} style={styles.optionBtnMain}>
-                <User color="white" size={20} />
-                <Text style={styles.optionTextMain}>Login Pessoal</Text>
-              </TouchableOpacity>
+        <Box marginBottom="l">
+          <Text variant="h2" marginBottom="s">Acesso ao Ecossistema</Text>
+          <Text variant="body" color="gray1">Insira sua identidade para continuar.</Text>
+        </Box>
 
-              <TouchableOpacity onPress={() => setScene('INSTITUTIONAL')} style={styles.optionBtnSec}>
-                <Building2 color={HZ_RED} size={20} />
-                <View style={{ marginLeft: 16 }}>
-                  <Text style={styles.optionTitleSec}>Acesso Institucional</Text>
-                  <Text style={styles.optionDescSec}>Ativação via CPF</Text>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+        <ClarityInput
+          label="HorizionID ou E-mail"
+          placeholder="@seu_id ou e-mail"
+          value={identifier}
+          onChangeText={setIdentifier}
+          autoCapitalize="none"
+        />
 
-          {currentScene === 'LOGIN' && (
-            <Animated.View entering={SlideInRight}>
-              <TouchableOpacity onPress={reset} style={styles.backBtn}><ArrowLeft color="#000" /></TouchableOpacity>
-              <Text style={styles.sceneTitle}>Acesse sua conta</Text>
-              <ModernInput label="E-mail" icon={Mail} value={email} onChangeText={setEmail} keyboardType="email-address" />
-              <ModernInput label="Senha" icon={Lock} isPassword value={password} onChangeText={setPassword} />
-              <TouchableOpacity onPress={handleLogin} disabled={loading} style={styles.actionBtn}>
-                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.actionBtnText}>Entrar</Text>}
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+        <ClarityInput
+          label="Credencial de Segurança"
+          placeholder="••••••••"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-          {currentScene === 'INSTITUTIONAL' && (
-            <Animated.View entering={SlideInRight}>
-              <TouchableOpacity onPress={reset} style={styles.backBtn}><ArrowLeft color="#000" /></TouchableOpacity>
-              <Text style={styles.sceneTitle}>Validação de Lastro</Text>
-              <Text style={styles.sceneSubtitle}>Insira seu documento para localizar o pré-cadastro corporativo.</Text>
-              
-              {/* Note a máscara de CPF sendo aplicada no onChangeText */}
-              <ModernInput 
-                label="CPF" 
-                placeholder="000.000.000-00" 
-                value={cpf} 
-                onChangeText={(text) => setCpf(formatCPF(text))} 
-                keyboardType="numeric" 
-                maxLength={14}
-              />
-              
-              <TouchableOpacity onPress={handleVerifyCpf} disabled={loading} style={styles.actionBtn}>
-                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.actionBtnText}>Verificar</Text>}
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+        <Box marginTop="l">
+          <ClarityButton 
+            label="Entrar" 
+            onPress={handleLogin} 
+            isLoading={isLoading}
+            disabled={!identifier || !password}
+          />
+        </Box>
 
-          {currentScene === 'PASSWORD_SET' && (
-             // ... [Seu código anterior do PASSWORD_SET mantido]
-            <Animated.View entering={FadeIn}>
-              <ShieldCheck color={HZ_RED} size={48} style={{ marginBottom: 24 }} />
-              <Text style={styles.sceneTitle}>Olá, {tempUser?.name}!</Text>
-              <Text style={styles.sceneSubtitle}>Conta localizada. Defina a sua senha para ativar o acesso.</Text>
-              <ModernInput label="Nova Senha" isPassword value={password} onChangeText={setPassword} />
-              <ModernInput label="Confirmar Senha" isPassword />
-              <TouchableOpacity style={styles.actionBtnRed}>
-                <Text style={styles.actionBtnText}>Ativar Acesso</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <Box marginTop="xl" alignItems="center">
+          <Text variant="subText">Ainda não possui uma identidade digital?</Text>
+          <Text 
+            variant="subText" 
+            color="horazionRed" 
+            fontWeight="bold" 
+            marginTop="xs"
+            onPress={() => router.push('/welcome')}
+          >
+            Conheça o Horazion Life
+          </Text>
+        </Box>
+      </Animated.View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  scene: { flex: 1, justifyContent: 'center', paddingHorizontal: 32, paddingVertical: 40 },
-  title: { fontSize: 34, fontWeight: '900', color: HZ_BLACK, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: '#71717A', marginBottom: 48 },
-  optionBtnMain: { flexDirection: 'row', alignItems: 'center', backgroundColor: HZ_BLACK, height: 64, borderRadius: 20, paddingHorizontal: 24, marginBottom: 16 },
-  optionTextMain: { color: 'white', fontWeight: '700', marginLeft: 16 },
-  optionBtnSec: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F4F4F5', height: 64, borderRadius: 20, paddingHorizontal: 24, backgroundColor: '#FAFAFA' },
-  optionTitleSec: { fontWeight: '700', color: HZ_BLACK },
-  optionDescSec: { fontSize: 12, color: '#A1A1AA' },
-  backBtn: { marginBottom: 32 },
-  sceneTitle: { fontSize: 26, fontWeight: '800', color: HZ_BLACK, marginBottom: 8 },
-  sceneSubtitle: { fontSize: 14, color: '#71717A', marginBottom: 32, lineHeight: 22 },
-  actionBtn: { backgroundColor: HZ_BLACK, height: 58, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
-  actionBtnRed: { backgroundColor: HZ_RED, height: 58, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
-  actionBtnText: { color: 'white', fontWeight: '800', textTransform: 'uppercase' },
-  
-  // Estilos do novo Toast de Erro
-  errorToast: {
-    position: 'absolute', top: 60, left: 20, right: 20, zIndex: 100,
-    backgroundColor: '#FFF', padding: 16, borderRadius: 16,
-    flexDirection: 'row', alignItems: 'flex-start',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5,
-    borderLeftWidth: 4, borderLeftColor: HZ_RED
-  },
-  errorTitle: { fontWeight: '700', color: HZ_BLACK, fontSize: 14, marginBottom: 2 },
-  errorDesc: { color: '#52525B', fontSize: 13, marginBottom: 4 },
-  errorSol: { color: '#A1A1AA', fontSize: 11, fontWeight: '600' }
-});
