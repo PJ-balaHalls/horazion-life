@@ -44,7 +44,7 @@ export const HeroContent = ({ onAction, onHide }: { onAction: (route: string) =>
       )}
 
       <Text style={styles.heroTitle}>HORAZION <Text style={{ color: HZ_RED }}>LIFE</Text></Text>
-      <Text style={styles.heroSubtitle}>SISTEMA OPERATIVO SOCIAL</Text>
+      <Text style={styles.heroSubtitle}>SISTEMA OPERATIVO SOCIAL - SOS </Text>
       
       <View style={styles.authContainer}>
         <TouchableOpacity style={styles.biometricBtn} onPress={() => console.log("Init Biometrics")}>
